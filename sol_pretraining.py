@@ -24,11 +24,17 @@ import math
 
 from utils import transformation_utils, drawing
 
+from tqdm import tqdm
+
 with open(sys.argv[1]) as f:
     config = yaml.load(f)
 
+os.makedirs('data/sol_val', exist_ok=True)
+
 sol_network_config = config['network']['sol']
 pretrain_config = config['pretraining']
+
+os.makedirs(os.path.join('data', pretrain_config['snapshot_path']), exist_ok=True)
 
 training_set_list = load_file_list(pretrain_config['training_set'])
 train_dataset = SolDataset(training_set_list,
@@ -67,14 +73,14 @@ optimizer = torch.optim.Adam(sol.parameters(), lr=pretrain_config['sol']['learni
 
 lowest_loss = np.inf
 cnt_since_last_improvement = 0
-for epoch in xrange(1000):
-    print("Epoch", epoch)
+for epoch in range(1000):
+    print("Epoch", epoch+1)
 
     sol.train()
     sum_loss = 0.0
     steps = 0.0
-
-    for step_i, x in enumerate(train_dataloader):
+    train_step = tqdm(train_dataloader)
+    for step_i, x in enumerate(train_step):
         img = Variable(x['img'].type(dtype), requires_grad=False)
 
         sol_gt = None
@@ -93,8 +99,9 @@ for epoch in xrange(1000):
         loss.backward()
         optimizer.step()
 
-        sum_loss += loss.data[0]
+        sum_loss += loss.item()
         steps += 1
+        train_step.set_description("Loss: {:3.5f}".format(loss.item()))
 
     print("Train Loss", sum_loss/steps)
     #print("Real Epoch", train_dataloader.epoch)
@@ -102,24 +109,26 @@ for epoch in xrange(1000):
     sol.eval()
     sum_loss = 0.0
     steps = 0.0
+    val_step = tqdm(test_dataloader)
+    with torch.no_grad():
+        for step_i, x in enumerate(val_step):
+            img = Variable(x['img'].type(dtype))
+            sol_gt = Variable(x['sol_gt'].type(dtype))
 
-    for step_i, x in enumerate(test_dataloader):
-        img = Variable(x['img'].type(dtype), requires_grad=False, volatile=True)
-        sol_gt = Variable(x['sol_gt'].type(dtype), requires_grad=False, volatile=True)
+            predictions = sol(img)
+            predictions = transformation_utils.pt_xyrs_2_xyxy(predictions)
+            loss = alignment_loss(predictions, sol_gt, x['label_sizes'], alpha_alignment, alpha_backprop)
 
-        predictions = sol(img)
-        predictions = transformation_utils.pt_xyrs_2_xyxy(predictions)
-        loss = alignment_loss(predictions, sol_gt, x['label_sizes'], alpha_alignment, alpha_backprop)
+            ### Write images to file to visualization
+            org_img = img[0].data.cpu().numpy().transpose([2,1,0])
+            org_img = ((org_img + 1)*128).astype(np.uint8)
+            org_img = org_img.copy()
+            org_img = drawing.draw_sol_torch(predictions, org_img)
+            cv2.imwrite("data/sol_val/{}.png".format(step_i), org_img)
 
-        ### Write images to file to visualization
-        #org_img = img[0].data.cpu().numpy().transpose([2,1,0])
-        #org_img = ((org_img + 1)*128).astype(np.uint8)
-        #org_img = org_img.copy()
-        #org_img = drawing.draw_sol_torch(predictions, org_img)
-        # cv2.imwrite("data/sol_val_2/{}.png".format(step_i), org_img)
-
-        sum_loss += loss.data[0]
-        steps += 1
+            sum_loss += loss.item()
+            steps += 1
+            val_step.set_description("Loss: {:3.5f}".format(loss.item()))
 
     cnt_since_last_improvement += 1
     if lowest_loss > sum_loss/steps:
