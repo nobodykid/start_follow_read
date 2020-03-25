@@ -18,11 +18,17 @@ import json
 import os
 import yaml
 
+from tqdm import tqdm
+
+os.makedirs('data/lf_val', exist_ok=True)
+
 with open(sys.argv[1]) as f:
     config = yaml.load(f)
 
 sol_network_config = config['network']['sol']
 pretrain_config = config['pretraining']
+
+os.makedirs(os.path.join('data', pretrain_config['snapshot_path']), exist_ok=True)
 
 training_set_list = load_file_list(pretrain_config['training_set'])
 
@@ -56,7 +62,8 @@ for epoch in range(1000):
     sum_loss = 0.0
     steps = 0.0
     line_follower.train()
-    for x in train_dataloader:
+    train_step = tqdm(train_dataloader)
+    for x in train_step:
         #Only single batch for now
         x = x[0]
 
@@ -81,14 +88,16 @@ for epoch in range(1000):
 
         sum_loss += loss.item()
         steps += 1
+        train_step.set_description("Loss: {:3.5f}".format(loss.item()))
 
     print("Train Loss", sum_loss/steps)
-    print("Real Epoch", train_dataloader.epoch)
+    # print("Real Epoch", train_dataloader.epoch)
 
     sum_loss = 0.0
     steps = 0.0
     line_follower.eval()
-    for x in test_dataloader:
+    val_step = tqdm(test_dataloader)
+    for x in val_step:
         x = x[0]
 
         positions = [Variable(x_i.type(dtype), requires_grad=False, volatile=True)[None,...] for x_i in x['lf_xyrs']]
@@ -100,14 +109,15 @@ for epoch in range(1000):
 
         grid_line, _, _, xy_output = line_follower(img, positions[:1], steps=len(positions), skip_grid=True)
 
-        # line = torch.nn.functional.grid_sample(img.transpose(2,3), grid_line)
-        # line = (line + 1.0) * 128
-        # cv2.imwrite("tra/{}.png".format(steps), line.data[0].cpu().numpy().transpose())
+        line = torch.nn.functional.grid_sample(img.transpose(2,3), grid_line)
+        line = (line + 1.0) * 128
+        cv2.imwrite("lf_val/{}.png".format(steps), line.item().numpy().transpose())
 
         loss = lf_loss.point_loss(xy_output, xy_positions)
 
         sum_loss += loss.item()
         steps += 1
+        val_step.set_description("Loss: {:3.5f}".format(loss.item()))
 
     cnt_since_last_improvement += 1
     if lowest_loss > sum_loss/steps:
