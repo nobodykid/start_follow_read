@@ -74,7 +74,7 @@ dtype = torch.cuda.FloatTensor
 
 lowest_loss = np.inf
 cnt_since_last_improvement = 0
-for epoch in xrange(1000):
+for epoch in range(1000):
     print("Epoch", epoch)
     sum_loss = 0.0
     steps = 0.0

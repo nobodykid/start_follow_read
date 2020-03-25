@@ -73,7 +73,7 @@ def training_step(config):
 
     lowest_loss = np.inf
     lowest_loss_i = 0
-    for epoch in xrange(10000000):
+    for epoch in range(10000000):
         lf.eval()
         sum_loss = 0.0
         steps = 0.0
@@ -120,7 +120,7 @@ def training_step(config):
 
             # loss = lf_loss.point_loss(xy_output, xy_positions)
             #
-            # sum_loss += loss.data[0]
+            # sum_loss += loss.item()
             # steps += 1
 
         if epoch == 0:
@@ -194,7 +194,7 @@ def training_step(config):
             loss.backward()
             optimizer.step()
 
-            sum_loss += loss.data[0]
+            sum_loss += loss.item()
             steps += 1
 
 

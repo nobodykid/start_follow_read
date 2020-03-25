@@ -79,7 +79,7 @@ def alignment(predictions, hw_scores, alpha_alignment=0.1, alpha_backprop=0.1):
     X = np.zeros_like(C)
 
     idxs = []
-    for b in xrange(C.shape[0]):
+    for b in range(C.shape[0]):
         C_i = C[b]
         row_ind, col_ind = linear_sum_assignment(C_i.T)
         idxs.append((col_ind, row_ind))
@@ -117,7 +117,7 @@ def loss(preds, non_hw_sol, hw_sol, gt_lines, char_to_idx, criterion):
     confidence_loss = -selected_confidence - not_selected_confidence
 
     # print(" - - - - Losses - - - - ")
-    # print(ctc_loss.data[0])
+    # print(ctc_loss.item())
     # print(selected_confidence.data[0], log_confidences.size())
     # print(not_selected_confidence.data[0], log_one_minus_confidences.size())
     # print("")

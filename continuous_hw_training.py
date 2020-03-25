@@ -74,7 +74,7 @@ def training_step(config):
 
     lowest_loss = np.inf
     lowest_loss_i = 0
-    for epoch in xrange(10000000000):
+    for epoch in range(10000000000):
         sum_loss = 0.0
         steps = 0.0
         hw.eval()
@@ -153,7 +153,7 @@ def training_step(config):
             out = output_batch.data.cpu().numpy()
 
             # if i == 0:
-            #     for i in xrange(out.shape[0]):
+            #     for i in range(out.shape[0]):
             #         pred, pred_raw = string_utils.naive_decode(out[i,...])
             #         pred_str = string_utils.label2str_single(pred_raw, idx_to_char, True)
             #         print(pred_str

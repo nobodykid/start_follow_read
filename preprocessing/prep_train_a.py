@@ -279,7 +279,7 @@ def handle_single_image(xml_path, img_path, output_directory, config={}):
 
 
                 line_points = []
-                for i in xrange(0,mapping.shape[1],target_height):
+                for i in range(0,mapping.shape[1],target_height):
 
                     x0 = float(rectified_to_warped_x[0,i])
                     x1 = float(rectified_to_warped_x[-1,i])

@@ -198,7 +198,7 @@ def main():
     real_json_folder = config['training']['training_set']['json_folder']
     while True:
 
-        for i in xrange(start_idx, end_idx):
+        for i in range(start_idx, end_idx):
             i_start = float(i) / config['training']['alignment']['train_refresh_groups']
             i_stop = float(i+1) / config['training']['alignment']['train_refresh_groups']
 

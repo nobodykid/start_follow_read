@@ -80,18 +80,18 @@ def main():
                     lf_paths = [p[0] for p in pairs]
                     hw_paths = [p[1] for p in pairs]
 
-                    to_join = [[] for i in xrange(cnt)]
+                    to_join = [[] for i in range(cnt)]
                     for lf_path in lf_paths:
-                        for i in xrange(len(lf_path)):
+                        for i in range(len(lf_path)):
                             to_join[i].append(lf_path[i])
 
-                    for i in xrange(len(to_join)):
+                    for i in range(len(to_join)):
                         to_join[i] = torch.cat(to_join[i], dim=0)
 
                     lf_path = to_join
 
                     grid_line = []
-                    for i in xrange(0, len(lf_path)-1):
+                    for i in range(0, len(lf_path)-1):
                         pts_0 = lf_path[i]
                         pts_1 = lf_path[i+1]
                         pts = torch.cat([pts_0, pts_1], dim=2)

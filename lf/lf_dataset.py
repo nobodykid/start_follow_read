@@ -50,7 +50,7 @@ class LfDataset(Dataset):
             if d is None:
                 continue
 
-            for i in xrange(len(d)):
+            for i in range(len(d)):
                 if 'lf' not in d[i]:
                     continue
                 self.detailed_ids.append((ids_idx, i))

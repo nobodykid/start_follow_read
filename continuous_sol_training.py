@@ -85,7 +85,7 @@ def training_step(config):
             predictions = sol(img)
             predictions = transformation_utils.pt_xyrs_2_xyxy(predictions)
             loss = alignment_loss(predictions, sol_gt, x['label_sizes'], alpha_alignment, alpha_backprop)
-            sum_loss += loss.data[0]
+            sum_loss += loss.item()
             steps += 1
 
         if epoch == 0:
@@ -154,7 +154,7 @@ def training_step(config):
             loss.backward()
             optimizer.step()
 
-            sum_loss += loss.data[0]
+            sum_loss += loss.item()
             steps += 1
 
         print("Train Loss", sum_loss/steps)

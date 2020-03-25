@@ -70,7 +70,7 @@ class LineFollower(nn.Module):
         view_window_imgs = []
         next_windows = []
         reset_windows = True
-        for i in xrange(steps):
+        for i in range(steps):
 
             if i%reset_interval != 0 or reset_interval==-1:
                 p_0 = positions[-1]
@@ -148,7 +148,7 @@ class LineFollower(nn.Module):
         a_pt = a_pt.transpose(1,0)
         a_pt = a_pt.expand(batch_size, a_pt.size(0), a_pt.size(1))
 
-        for i in xrange(0, len(next_windows)-1):
+        for i in range(0, len(next_windows)-1):
 
             w_0 = next_windows[i]
             w_1 = next_windows[i+1]

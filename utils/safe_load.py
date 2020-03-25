@@ -3,7 +3,7 @@ import time
 import json
 
 def torch_state(path):
-    for i in xrange(10):
+    for i in range(10):
         try:
             state = torch.load(path)
             return state
@@ -16,7 +16,7 @@ def torch_state(path):
     return
 
 def json_state(path):
-    for i in xrange(10):
+    for i in range(10):
         try:
             with open(path) as f:
                 state = json.load(f)
