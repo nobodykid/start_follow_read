@@ -1,11 +1,11 @@
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from stn.gridgen import AffineGridGen, PerspectiveGridGen, GridGen
+from .stn.gridgen import AffineGridGen, PerspectiveGridGen, GridGen
 import numpy as np
 from utils import transformation_utils
-from lf_cnn import makeCnn
-from fast_patch_view import get_patches
+from .lf_cnn import makeCnn
+from .fast_patch_view import get_patches
 
 class LineFollower(nn.Module):
     def __init__(self, output_grid_size=32, dtype=torch.cuda.FloatTensor):
