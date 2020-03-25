@@ -1,3 +1,5 @@
+from __future__ import division
+
 from utils import error_rates
 import copy
 import os

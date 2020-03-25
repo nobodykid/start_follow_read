@@ -1,7 +1,8 @@
+from __future__ import print_function, division
+
 import torch
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
-from warpctc_pytorch import CTCLoss
 
 from hw import hw_dataset
 from hw import cnn_lstm
@@ -62,7 +63,7 @@ test_dataloader = DataLoader(test_dataset,
 
 
 
-criterion = CTCLoss()
+criterion = torch.nn.CTCLoss()()
 
 hw = cnn_lstm.create_model(hw_network_config)
 hw.cuda()
@@ -74,7 +75,7 @@ dtype = torch.cuda.FloatTensor
 lowest_loss = np.inf
 cnt_since_last_improvement = 0
 for epoch in xrange(1000):
-    print "Epoch", epoch
+    print("Epoch", epoch)
     sum_loss = 0.0
     steps = 0.0
     hw.train()
@@ -101,16 +102,16 @@ for epoch in xrange(1000):
         batch_size = preds.size(1)
         preds_size = Variable(torch.IntTensor([preds.size(0)] * batch_size))
 
-        # print "before"
+        # print("before")
         loss = criterion(preds, labels, preds_size, label_lengths)
-        # print "after"
+        # print("after")
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-    print "Train Loss", sum_loss/steps
-    print "Real Epoch", train_dataloader.epoch
+    print("Train Loss", sum_loss/steps)
+    print("Real Epoch", train_dataloader.epoch)
 
     sum_loss = 0.0
     steps = 0.0
@@ -138,15 +139,15 @@ for epoch in xrange(1000):
     if lowest_loss > sum_loss/steps:
         cnt_since_last_improvement = 0
         lowest_loss = sum_loss/steps
-        print "Saving Best"
+        print("Saving Best")
 
         if not os.path.exists(pretrain_config['snapshot_path']):
             os.makedirs(pretrain_config['snapshot_path'])
 
         torch.save(hw.state_dict(), os.path.join(pretrain_config['snapshot_path'], 'hw.pt'))
 
-    print "Test Loss", sum_loss/steps, lowest_loss
-    print ""
+    print("Test Loss", sum_loss/steps, lowest_loss)
+    print("")
 
     if cnt_since_last_improvement >= pretrain_config['hw']['stop_after_no_improvement'] and lowest_loss<0.9:
         break

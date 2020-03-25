@@ -1,3 +1,5 @@
+from __future__ import division
+
 import torch
 from torch import nn
 import math

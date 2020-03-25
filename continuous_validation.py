@@ -1,3 +1,5 @@
+from __future__ import print_function, division
+
 import torch
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
@@ -84,12 +86,12 @@ def alignment_step(config, dataset_lookup=None, model_mode='best_validation', pe
         a+=1
 
         if a%100 == 0:
-            print a, np.mean(aligned_results)
+            print(a, np.mean(aligned_results))
 
 
         x = x[0]
         if x is None:
-            print "Skipping alignment because it returned None"
+            print("Skipping alignment because it returned None")
             continue
 
         img = x['resized_img'].numpy()[0,...].transpose([2,1,0])
@@ -104,7 +106,7 @@ def alignment_step(config, dataset_lookup=None, model_mode='best_validation', pe
         out_original = e2e(x)
         if out_original is None:
             #TODO: not a good way to handle this, but fine for now
-            print "Possible Error: Skipping alignment on image"
+            print("Possible Error: Skipping alignment on image")
             continue
 
         out_original = e2e_postprocessing.results_to_numpy(out_original)
@@ -188,10 +190,10 @@ def main():
 
     best_validation_so_far = None
     if mode in ['all', 'validation', 'init']:
-        print "Running validation with best overall weight for baseline"
+        print("Running validation with best overall weight for baseline")
         error, i_error, mi_error, _, _, _ = alignment_step(config, dataset_lookup='validation_set', model_mode="best_overall")
         best_validation_so_far = error[1]
-        print "Baseline Validation", error
+        print("Baseline Validation", error)
 
     real_json_folder = config['training']['training_set']['json_folder']
     while True:
@@ -201,26 +203,26 @@ def main():
             i_stop = float(i+1) / config['training']['alignment']['train_refresh_groups']
 
             if mode in ['all', 'training', 'init']:
-                print ""
-                print "Train running ", i
+                print("")
+                print("Train running ", i)
                 start = time.time()
                 error, i_error, mi_error, sol, lf, hw  = alignment_step(config, dataset_lookup='training_set', percent_range=[i_start, i_stop])
-                print "Error:", error
-                print "Ideal Error:", i_error
-                print "Most Ideal Error:", mi_error
-                print "Time:", time.time() - start
+                print("Error:", error)
+                print("Ideal Error:", i_error)
+                print("Most Ideal Error:", mi_error)
+                print("Time:", time.time() - start)
 
             if mode == 'init':
                 #End early
                 return
 
             if mode in ['all', 'validation']:
-                print ""
-                print "Test running"
+                print("")
+                print("Test running")
                 start = time.time()
                 error, i_error, mi_error, sol, lf, hw = alignment_step(config, dataset_lookup='validation_set')
                 if error[1] <= best_validation_so_far:
-                    print "Saving best..."
+                    print("Saving best...")
                     dirname = config['training']['snapshot']['best_overall']
                     if not len(dirname) != 0 and os.path.exists(dirname):
                         os.makedirs(dirname)
@@ -232,10 +234,10 @@ def main():
                     torch.save(hw.state_dict(), save_path)
                     best_validation_so_far = error[1]
 
-                print "Error:", error
-                print "Ideal Error:", i_error
-                print "Most Ideal Error:", mi_error
-                print "Time:", time.time() - start
+                print("Error:", error)
+                print("Ideal Error:", i_error)
+                print("Most Ideal Error:", mi_error)
+                print("Time:", time.time() - start)
 
 
 if __name__ == "__main__":

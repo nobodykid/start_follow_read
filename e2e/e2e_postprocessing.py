@@ -1,3 +1,5 @@
+from __future import division
+
 from utils import string_utils, error_rates
 import numpy as np
 import nms

@@ -1,3 +1,5 @@
+from __future__ import division
+
 import numpy as np
 from torch.autograd import Variable
 import torch
@@ -53,6 +55,6 @@ if __name__ == "__main__":
     A_torch = Variable(torch.from_numpy(A))
 
     I_torch = inverse_torch(A_torch)
-    print I
-    print I_torch
+    print(I)
+    print(I_torch)
 

@@ -1,3 +1,5 @@
+from __future__ import division
+
 import torch
 import numpy as np
 import pyclipper
@@ -56,7 +58,7 @@ def lf_non_max_suppression_area(lf_xy_positions, confidences, overlap_range, ove
     # lf_xy_positions = np.concatenate([l.data.cpu().numpy()[None,...] for l in lf_xy_positions])
     # lf_xy_positions = lf_xy_positions[:,:,:2,:2]
 
-    # print lf_xy_positions
+    # print(lf_xy_positions)
     # raw_input()
     lf_xy_positions = [l[:,:2,:2] for l in lf_xy_positions]
     #this assumes equal length positions

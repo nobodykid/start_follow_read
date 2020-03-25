@@ -31,7 +31,7 @@ if __name__ == "__main__":
             for data_item in data:
                 for c in data_item.get('gt', None):
                     if c is None:
-                        print "There was a None GT"
+                        print("There was a None GT")
                         continue
                     if c not in out_char_to_idx:
                         out_char_to_idx[c] = cnt
@@ -53,9 +53,9 @@ if __name__ == "__main__":
     }
 
     for k,v in sorted(char_freq.iteritems(), key=lambda x: x[1]):
-        print k, v
+        print(k, v
 
-    print("Size:", len(output_data['char_to_idx']))
+    print("Size:", len(output_data['char_to_idx'])))
 
     with open(character_set_path, 'w') as outfile:
         json.dump(output_data, outfile)

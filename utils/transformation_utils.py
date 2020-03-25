@@ -1,3 +1,5 @@
+from __future__ import division
+
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -60,7 +62,7 @@ def compute_basis(pts):
     A_inv = inverse_torch(A)
 
 
-    #print "s", time.time() - start
+    #print("s", time.time() - start)
     x = A_inv.bmm(b)
 
     B = A.clone()

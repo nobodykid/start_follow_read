@@ -1,3 +1,4 @@
+from __future__ import division, print_function
 
 import torch
 from torch.utils.data import DataLoader
@@ -68,7 +69,7 @@ def training_step(config):
     epoch = -1
     while True:#This ends on a break based on the current itme
         epoch += 1
-        print "Train Time:",(time.time() - init_training_time), "Allowed Time:", allowed_training_time
+        print("Train Time:",(time.time() - init_training_time), "Allowed Time:", allowed_training_time)
 
         sol.eval()
         sum_loss = 0.0
@@ -88,8 +89,8 @@ def training_step(config):
             steps += 1
 
         if epoch == 0:
-            print "First Validation Step Complete"
-            print "Benchmark Validation CER:", sum_loss/steps
+            print("First Validation Step Complete")
+            print("Benchmark Validation CER:", sum_loss/steps)
             lowest_loss = sum_loss/steps
 
             sol, lf, hw = init_model(config, sol_dir='current', only_load='sol')
@@ -97,14 +98,14 @@ def training_step(config):
             optimizer = torch.optim.Adam(sol.parameters(), lr=train_config['sol']['learning_rate'])
             optim_path = os.path.join(train_config['snapshot']['current'], "sol_optim.pt")
             if os.path.exists(optim_path):
-                print "Loading Optim Settings"
+                print("Loading Optim Settings")
                 optimizer.load_state_dict(safe_load.torch_state(optim_path))
             else:
-                print "Failed to load Optim Settings"
+                print("Failed to load Optim Settings")
 
         elif lowest_loss > sum_loss/steps:
             lowest_loss = sum_loss/steps
-            print "Saving Best"
+            print("Saving Best")
 
             dirname = train_config['snapshot']['best_validation']
             if not len(dirname) != 0 and os.path.exists(dirname):
@@ -115,14 +116,14 @@ def training_step(config):
             torch.save(sol.state_dict(), save_path)
             lowest_loss_i = epoch
 
-        print "Test Loss", sum_loss/steps, lowest_loss
-        print "Time:", time.time() - start_time
-        print ""
+        print("Test Loss", sum_loss/steps, lowest_loss)
+        print("Time:", time.time() - start_time)
+        print("")
 
-        print "Epoch", epoch
+        print("Epoch", epoch)
 
         if allowed_training_time < (time.time() - init_training_time):
-            print "Out of time. Saving current state and exiting..."
+            print("Out of time. Saving current state and exiting...")
             dirname = train_config['snapshot']['current']
             if not len(dirname) != 0 and os.path.exists(dirname):
                 os.makedirs(dirname)
@@ -156,9 +157,9 @@ def training_step(config):
             sum_loss += loss.data[0]
             steps += 1
 
-        print "Train Loss", sum_loss/steps
-        print "Real Epoch", train_dataloader.epoch
-        print "Time:", time.time() - start_time
+        print("Train Loss", sum_loss/steps)
+        print("Real Epoch", train_dataloader.epoch)
+        print("Time:", time.time() - start_time)
 
 
 
@@ -170,8 +171,8 @@ if __name__ == "__main__":
 
     cnt = 0
     while True:
-        print ""
-        print "Full Step", cnt
-        print ""
+        print("")
+        print("Full Step", cnt)
+        print("")
         cnt += 1
         training_step(config)

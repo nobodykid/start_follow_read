@@ -1,3 +1,5 @@
+from __future__ import division
+
 import torch
 
 def compute_distance(s0, e0, p0):

@@ -94,7 +94,7 @@ class LMDecoder(object):
 
         self.acoustic_scale = params.get('acoustic', 1.2)
         if self.acoustic_scale < 0:
-            print "Warning: acoustic scale is less than 0"
+            print("Warning: acoustic scale is less than 0")
         allow_partial = params.get('allow_partial', True)
         beam = params.get('beam', 13)
         self.alphaweight = params.get('alphaweight', 0.3)
@@ -152,6 +152,6 @@ class LMDecoder(object):
 
     def add_stats(self, data):
         if not self.add_stats_phase:
-            print "Reseting lm stats because more stats added after a decoding"
+            print("Reseting lm stats because more stats added after a decoding")
             self.add_stats_phase = True
         self.stats.add_stats(data)

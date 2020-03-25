@@ -1,3 +1,5 @@
+from __future__ import division
+
 import sys
 import torch
 
@@ -54,7 +56,7 @@ if __name__ == "__main__":
     e2e.eval()
 
     for image_path in sorted(image_paths):
-        print image_path
+        print(image_path)
 
         org_img = cv2.imread(image_path)
 
@@ -89,7 +91,7 @@ if __name__ == "__main__":
         out = e2e_postprocessing.results_to_numpy(out)
 
         if out is None:
-            print "No Results"
+            print("No Results")
             continue
 
         # take into account the padding

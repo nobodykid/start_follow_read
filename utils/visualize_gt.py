@@ -1,3 +1,5 @@
+from __future__ import division
+
 import cv2
 import numpy as np
 import sys
@@ -14,10 +16,10 @@ def main():
         data = json.load(f)
 
     for i, d in enumerate(data):
-        print i
-        print d['gt']
-        print d['pred']
-        print "---"
+        print(i)
+        print(d['gt'])
+        print(d['pred'])
+        print("---")
         prev_pt = None
         for pt in d['lf']:
 

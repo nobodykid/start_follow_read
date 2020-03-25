@@ -116,10 +116,10 @@ def loss(preds, non_hw_sol, hw_sol, gt_lines, char_to_idx, criterion):
 
     confidence_loss = -selected_confidence - not_selected_confidence
 
-    # print " - - - - Losses - - - - "
-    # print ctc_loss.data[0]
-    # print selected_confidence.data[0], log_confidences.size()
-    # print not_selected_confidence.data[0], log_one_minus_confidences.size()
-    # print ""
+    # print(" - - - - Losses - - - - ")
+    # print(ctc_loss.data[0])
+    # print(selected_confidence.data[0], log_confidences.size())
+    # print(not_selected_confidence.data[0], log_one_minus_confidences.size())
+    # print("")
 
     return ctc_loss + confidence_loss.cpu()

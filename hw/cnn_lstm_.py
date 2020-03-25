@@ -81,8 +81,8 @@ class CRNN(nn.Module):
         # output = self.softmax(output)
         # output = output.view(*output_size)
 
-        # print output.size()
-        # print output.mean()
+        # print(output.size())
+        # print(output.mean())
 
         return output
 

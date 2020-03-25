@@ -128,7 +128,7 @@ class E2EModel(nn.Module):
                     l_np = l.data.cpu().numpy()
                     line_imgs.append(l_np)
                 #     cv2.imwrite("example_line_out.png", l_np)
-                #     print "Saved!"
+                #     print("Saved!")
                 #     raw_input()
 
                 out = self.hw(line)

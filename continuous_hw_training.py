@@ -1,7 +1,8 @@
+from __future__ import division, print_function
+
 import torch
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
-from warpctc_pytorch import CTCLoss
 
 from hw import hw_dataset
 from hw import cnn_lstm
@@ -68,7 +69,7 @@ def training_step(config):
     hw_state = safe_load.torch_state(hw_path)
     hw.load_state_dict(hw_state)
     hw.cuda()
-    criterion = CTCLoss()
+    criterion = torch.nn.CTCLoss()()
     dtype = torch.cuda.FloatTensor
 
     lowest_loss = np.inf
@@ -98,8 +99,8 @@ def training_step(config):
 
 
         if epoch == 0:
-            print "First Validation Step Complete"
-            print "Benchmark Validation CER:", sum_loss/steps
+            print("First Validation Step Complete")
+            print("Benchmark Validation CER:", sum_loss/steps)
             lowest_loss = sum_loss/steps
 
             hw = cnn_lstm.create_model(hw_network_config)
@@ -111,14 +112,14 @@ def training_step(config):
             optimizer = torch.optim.Adam(hw.parameters(), lr=train_config['hw']['learning_rate'])
             optim_path = os.path.join(train_config['snapshot']['current'], "hw_optim.pt")
             if os.path.exists(optim_path):
-                print "Loading Optim Settings"
+                print("Loading Optim Settings")
                 optimizer.load_state_dict(safe_load.torch_state(optim_path))
             else:
-                print "Failed to load Optim Settings"
+                print("Failed to load Optim Settings")
 
         if lowest_loss > sum_loss/steps:
             lowest_loss = sum_loss/steps
-            print "Saving Best"
+            print("Saving Best")
 
             dirname = train_config['snapshot']['best_validation']
             if not len(dirname) != 0 and os.path.exists(dirname):
@@ -129,14 +130,14 @@ def training_step(config):
             torch.save(hw.state_dict(), save_path)
             lowest_loss_i = epoch
 
-        print "Test Loss", sum_loss/steps, lowest_loss
-        print ""
+        print("Test Loss", sum_loss/steps, lowest_loss)
+        print("")
 
         if allowed_training_time < (time.time() - init_training_time):
-            print "Out of time: Exiting..."
+            print("Out of time: Exiting...")
             break
 
-        print "Epoch", epoch
+        print("Epoch", epoch)
         sum_loss = 0.0
         steps = 0.0
         hw.train()
@@ -155,7 +156,7 @@ def training_step(config):
             #     for i in xrange(out.shape[0]):
             #         pred, pred_raw = string_utils.naive_decode(out[i,...])
             #         pred_str = string_utils.label2str_single(pred_raw, idx_to_char, True)
-            #         print pred_str
+            #         print(pred_str
 
             for i, gt_line in enumerate(x['gt']):
                 logits = out[i,...]
@@ -174,11 +175,11 @@ def training_step(config):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-        print "Train Loss", sum_loss/steps
-        print "Real Epoch", train_dataloader.epoch
+        print("Train Loss", sum_loss/steps)
+        print("Real Epoch", train_dataloader.epoch)
 
     ## Save current snapshots for next iteration
-    print "Saving Current"
+    print("Saving Current")
     dirname = train_config['snapshot']['current']
     if not len(dirname) != 0 and os.path.exists(dirname):
         os.makedirs(dirname)
@@ -197,8 +198,8 @@ if __name__ == "__main__":
 
     cnt = 0
     while True:
-        print ""
-        print "Full Step", cnt
-        print ""
+        print("")
+        print("Full Step", cnt)
+        print("")
         cnt += 1
         training_step(config)

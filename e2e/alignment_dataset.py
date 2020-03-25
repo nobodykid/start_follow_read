@@ -1,3 +1,5 @@
+from __future__ import division
+
 from torch.utils.data import Dataset
 import json
 import os
@@ -24,7 +26,7 @@ class AlignmentDataset(Dataset):
         if data_range is not None:
             self.ids = random.sample(self.ids, data_range)
 
-        print "Alignment Ids Count:", len(self.ids)
+        print("Alignment Ids Count:", len(self.ids)))
 
     def __len__(self):
         return len(self.ids)

@@ -1,3 +1,5 @@
+from __future__ import division
+
 import sys
 import os
 from preprocessing import parse_PAGE
@@ -34,8 +36,8 @@ if __name__ == "__main__":
         for f in files:
             if f.endswith(".xml"):
                 f2_files[f] = os.path.join(root, f)
-    print len(f1_files)
-    print len(f2_files)
+    print(len(f1_files))
+    print(len(f2_files))
 
     sum_dif = 0
     results =[]
@@ -60,7 +62,7 @@ if __name__ == "__main__":
         xor_set = set(region1.keys()) ^ set(region2.keys())
 
         if len(xor_set) != 0:
-            print k, xor_set
+            print(k, xor_set)
 
         for k in set(region1.keys()) | set(region2.keys()):
 
@@ -77,4 +79,4 @@ if __name__ == "__main__":
 
             results.append((out, filename, k, i, full_r1, full_r2))
             sum_dif += out
-    print "WER", sum_dif
+    print("WER", sum_dif)

@@ -1,3 +1,5 @@
+from __future__ import division
+
 import editdistance
 def cer(r, h):
     #Remove any double or trailing

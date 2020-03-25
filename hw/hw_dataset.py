@@ -1,3 +1,5 @@
+from __future__ import division
+
 import json
 
 import torch
@@ -76,7 +78,7 @@ class HwDataset(Dataset):
 
         if random_subset_size is not None:
             self.detailed_ids = random.sample(self.detailed_ids, min(random_subset_size, len(self.detailed_ids)))
-        print len(self.detailed_ids)
+        print(len(self.detailed_ids))
 
         self.char_to_idx = char_to_idx
         self.augmentation = augmentation
@@ -112,7 +114,7 @@ class HwDataset(Dataset):
         if img.shape[0] != self.img_height:
             if img.shape[0] < self.img_height and not self.warning:
                 self.warning = True
-                print "WARNING: upsampling image to fit size"
+                print("WARNING: upsampling image to fit size")
             percent = float(self.img_height) / img.shape[0]
             img = cv2.resize(img, (0,0), fx=percent, fy=percent, interpolation = cv2.INTER_CUBIC)
 

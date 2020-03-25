@@ -1,3 +1,5 @@
+from __future__ import division
+
 import sys
 import torch
 from torch.utils.data import DataLoader
@@ -45,7 +47,7 @@ def main():
                 img = Variable(l_i['full_img'], requires_grad=False, volatile=True)
                 renorm_matrix = transformation_utils.compute_renorm_matrix(img)[None,...]
 
-                print l_i['img_key']
+                print(l_i['img_key'])
 
                 all_lf_paths = defaultdict(list)
                 for j, item in enumerate(l_i['gt_json']):

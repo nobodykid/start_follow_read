@@ -1,3 +1,5 @@
+from __future__ import division, print_function
+
 import sys
 import os
 from os import path, listdir
@@ -92,20 +94,20 @@ def main():
 
     if use_lm:
         lm_params = config['network']['lm']
-        print "Loading LM"
+        print("Loading LM")
         decoder = lm_decoder.LMDecoder(idx_to_char, lm_params)
-        print "Done Loading LM"
+        print("Done Loading LM")
 
-        print "Accumulating stats for LM"
+        print("Accumulating stats for LM")
         for npz_path in sorted(npz_paths):
             out = np.load(npz_path)
             out = dict(out)
             for o in out['hw']:
                 o = log_softmax(o)
                 decoder.add_stats(o)
-        print "Done accumulating stats for LM"
+        print("Done accumulating stats for LM")
     else:
-        print "Skip Loading LM"
+        print("Skip Loading LM")
 
     for npz_path in sorted(npz_paths):
 
@@ -113,7 +115,7 @@ def main():
         out = dict(out)
 
         image_path = str(out['image_path'])
-        print image_path
+        print(image_path)
         org_img = cv2.imread(image_path)
 
         # Postprocessing Steps
@@ -208,14 +210,14 @@ def main():
                     PAGE_xml.create_output_xml_roi(in_xml_file, out, output_strings, out_xml_file, region_id)
                     in_xml_files[key] = out_xml_file #after first, add to current xml
                 else:
-                    print "Couldn't find xml file for ", key
+                    print("Couldn't find xml file for ", key)
             else:
                 if key in in_xml_files:
                     in_xml_file = in_xml_files[key]
                     out_xml_file = os.path.join(out_xml_folder, os.path.basename(in_xml_file))
                     PAGE_xml.create_output_xml(in_xml_file, out, output_strings, out_xml_file)
                 else:
-                    print "Couldn't find xml file for ", key
+                    print("Couldn't find xml file for ", key)
 
 
 
