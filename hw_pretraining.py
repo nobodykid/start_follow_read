@@ -4,9 +4,9 @@ import torch
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 
-from hw import hw_dataset
-from hw import cnn_lstm
-from hw.hw_dataset import HwDataset
+import hw
+# from hw.cnn_lstm import create_model
+from hw.hw_dataset import HwDataset, collate
 
 from utils.dataset_wrapper import DatasetWrapper
 from utils import safe_load
@@ -23,11 +23,15 @@ import yaml
 
 from utils.dataset_parse import load_file_list
 
+from tqdm import trange
+
 with open(sys.argv[1]) as f:
     config = yaml.load(f)
 
 hw_network_config = config['network']['hw']
 pretrain_config = config['pretraining']
+
+os.makedirs(pretrain_config['snapshot_path'], exist_ok=True)
 
 char_set_path = hw_network_config['char_set_path']
 
@@ -46,7 +50,7 @@ train_dataset = HwDataset(training_set_list,
 train_dataloader = DataLoader(train_dataset,
                              batch_size=pretrain_config['hw']['batch_size'],
                              shuffle=True, num_workers=0, drop_last=True,
-                             collate_fn=hw_dataset.collate)
+                             collate_fn=collate)
 
 batches_per_epoch = int(pretrain_config['hw']['images_per_epoch']/pretrain_config['hw']['batch_size'])
 train_dataloader = DatasetWrapper(train_dataloader, batches_per_epoch)
@@ -59,11 +63,11 @@ test_dataset = HwDataset(test_set_list,
 test_dataloader = DataLoader(test_dataset,
                              batch_size=pretrain_config['hw']['batch_size'],
                              shuffle=False, num_workers=0,
-                             collate_fn=hw_dataset.collate)
+                             collate_fn=collate)
 
 
 
-criterion = torch.nn.CTCLoss()()
+criterion = torch.nn.CTCLoss()
 
 hw = cnn_lstm.create_model(hw_network_config)
 hw.cuda()
@@ -79,8 +83,10 @@ for epoch in range(1000):
     sum_loss = 0.0
     steps = 0.0
     hw.train()
-    for i, x in enumerate(train_dataloader):
-
+    train_step = trange(batches_per_epoch)
+    for i in train_step:
+        x = train_dataloader.__next__()
+        
         line_imgs = Variable(x['line_imgs'].type(dtype), requires_grad=False)
         labels =  Variable(x['labels'], requires_grad=False)
         label_lengths = Variable(x['label_lengths'], requires_grad=False)
@@ -111,12 +117,12 @@ for epoch in range(1000):
         optimizer.step()
 
     print("Train Loss", sum_loss/steps)
-    print("Real Epoch", train_dataloader.epoch)
+    # print("Real Epoch", train_dataloader.epoch)
 
     sum_loss = 0.0
     steps = 0.0
     hw.eval()
-
+    val_step = tqdm(test_dataloader)
     for x in test_dataloader:
         line_imgs = Variable(x['line_imgs'].type(dtype), requires_grad=False, volatile=True)
         labels =  Variable(x['labels'], requires_grad=False, volatile=True)
@@ -140,9 +146,6 @@ for epoch in range(1000):
         cnt_since_last_improvement = 0
         lowest_loss = sum_loss/steps
         print("Saving Best")
-
-        if not os.path.exists(pretrain_config['snapshot_path']):
-            os.makedirs(pretrain_config['snapshot_path'])
 
         torch.save(hw.state_dict(), os.path.join(pretrain_config['snapshot_path'], 'hw.pt'))
 

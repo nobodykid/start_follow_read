@@ -18,7 +18,7 @@ import json
 import os
 import yaml
 
-from tqdm import tqdm
+from tqdm import trange
 
 os.makedirs('data/lf_val', exist_ok=True)
 
@@ -28,7 +28,7 @@ with open(sys.argv[1]) as f:
 sol_network_config = config['network']['sol']
 pretrain_config = config['pretraining']
 
-os.makedirs(os.path.join('data', pretrain_config['snapshot_path']), exist_ok=True)
+os.makedirs(pretrain_config['snapshot_path'], exist_ok=True)
 
 training_set_list = load_file_list(pretrain_config['training_set'])
 
@@ -62,10 +62,10 @@ for epoch in range(1000):
     sum_loss = 0.0
     steps = 0.0
     line_follower.train()
-    train_step = tqdm(train_dataloader)
+    train_step = trange(batches_per_epoch)
     for x in train_step:
         #Only single batch for now
-        x = x[0]
+        x = train_dataloader.__next__()[0]
 
         positions = [Variable(x_i.type(dtype), requires_grad=False)[None,...] for x_i in x['lf_xyrs']]
         xy_positions = [Variable(x_i.type(dtype), requires_grad=False)[None,...] for x_i in x['lf_xyxy']]
