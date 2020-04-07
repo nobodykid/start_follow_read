@@ -8,6 +8,9 @@ class DatasetWrapper:
 
     def __iter__(self):
         return self
+    
+    def __len__(self):
+        return self.count
 
     def __next__(self):
         # if self.idx == self.count:

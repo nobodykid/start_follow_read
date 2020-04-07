@@ -18,7 +18,7 @@ import json
 import os
 import yaml
 
-from tqdm import trange
+from tqdm import tqdm
 
 os.makedirs('data/lf_val', exist_ok=True)
 
@@ -58,15 +58,13 @@ dtype = torch.cuda.FloatTensor
 lowest_loss = np.inf
 cnt_since_last_improvement = 0
 for epoch in range(1000):
-    print("Epoch", epoch)
+    print("Epoch", epoch + 1)
     sum_loss = 0.0
     steps = 0.0
     line_follower.train()
-    train_step = trange(batches_per_epoch)
-    for x in train_step:
+    train_step = tqdm(train_dataloader)
+    for step_i, x in enumerate(train_step):
         #Only single batch for now
-        x = train_dataloader.__next__()[0]
-
         positions = [Variable(x_i.type(dtype), requires_grad=False)[None,...] for x_i in x['lf_xyrs']]
         xy_positions = [Variable(x_i.type(dtype), requires_grad=False)[None,...] for x_i in x['lf_xyxy']]
         img = Variable(x['img'].type(dtype), requires_grad=False)[None,...]

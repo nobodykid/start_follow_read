@@ -24,7 +24,7 @@ import math
 
 from utils import transformation_utils, drawing
 
-from tqdm import trange
+from tqdm import tqdm
 
 with open(sys.argv[1]) as f:
     config = yaml.load(f)
@@ -79,9 +79,8 @@ for epoch in range(1000):
     sol.train()
     sum_loss = 0.0
     steps = 0.0
-    train_step = trange(batches_per_epoch)
-    for step_i in train_step:
-        x = train_dataloader.__next__()
+    train_step = tqdm(train_dataloader)
+    for step_i, x in enumerate(train_step):
         img = Variable(x['img'].type(dtype), requires_grad=False)
 
         sol_gt = None
