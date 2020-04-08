@@ -13,11 +13,11 @@ class DatasetWrapper:
         return self.count
 
     def __next__(self):
-        # if self.idx == self.count:
-        #     self.idx = 0
-        #     raise StopIteration
-        # else:
-        #     self.idx += 1
+        if self.idx == self.count:
+            self.idx = 0
+            raise StopIteration
+        else:
+            self.idx += 1
         # while True:
         try:
             return next(self.iter_dataset)
