@@ -1,4 +1,4 @@
-)import sys
+import sys
 import parse_PAGE
 import cv2
 import line_extraction

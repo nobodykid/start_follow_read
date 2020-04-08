@@ -52,10 +52,10 @@ if __name__ == "__main__":
         "idx_to_char": out_idx_to_char2
     }
 
-    for k,v in sorted(char_freq.iteritems(), key=lambda x: x[1]):
-        print(k, v
+    for k,v in sorted(char_freq.items(), key=lambda x: x[1]):
+        print(k, v)
 
-    print("Size:", len(output_data['char_to_idx'])))
+    print("Size:", len(output_data['char_to_idx']))
 
     with open(character_set_path, 'w') as outfile:
         json.dump(output_data, outfile)
