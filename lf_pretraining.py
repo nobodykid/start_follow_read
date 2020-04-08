@@ -65,6 +65,8 @@ for epoch in range(1000):
     train_step = tqdm(train_dataloader)
     for step_i, x in enumerate(train_step):
         #Only single batch for now
+        x = x[0]
+
         positions = [Variable(x_i.type(dtype), requires_grad=False)[None,...] for x_i in x['lf_xyrs']]
         xy_positions = [Variable(x_i.type(dtype), requires_grad=False)[None,...] for x_i in x['lf_xyxy']]
         img = Variable(x['img'].type(dtype), requires_grad=False)[None,...]
@@ -87,6 +89,8 @@ for epoch in range(1000):
         sum_loss += loss.item()
         steps += 1
         train_step.set_description("Loss: {:3.5f}".format(loss.item()))
+        if step_i == batches_per_epoch:
+            break
 
     print("Train Loss", sum_loss/steps)
     # print("Real Epoch", train_dataloader.epoch)
@@ -95,27 +99,28 @@ for epoch in range(1000):
     steps = 0.0
     line_follower.eval()
     val_step = tqdm(test_dataloader)
-    for x in val_step:
-        x = x[0]
+    with torch.no_grad():
+        for step_i, x in enumerate(val_step):
+            x = x[0]
 
-        positions = [Variable(x_i.type(dtype), requires_grad=False, volatile=True)[None,...] for x_i in x['lf_xyrs']]
-        xy_positions = [Variable(x_i.type(dtype), requires_grad=False, volatile=True)[None,...] for x_i in x['lf_xyxy']]
-        img = Variable(x['img'].type(dtype), requires_grad=False, volatile=True)[None,...]
+            positions = [Variable(x_i.type(dtype))[None,...] for x_i in x['lf_xyrs']]
+            xy_positions = [Variable(x_i.type(dtype))[None,...] for x_i in x['lf_xyxy']]
+            img = Variable(x['img'].type(dtype))[None,...]
 
-        if len(xy_positions) <= 1:
-            continue
+            if len(xy_positions) <= 1:
+                continue
 
-        grid_line, _, _, xy_output = line_follower(img, positions[:1], steps=len(positions), skip_grid=True)
+            grid_line, _, _, xy_output = line_follower(img, positions[:1], steps=len(positions), skip_grid=False)
 
-        line = torch.nn.functional.grid_sample(img.transpose(2,3), grid_line)
-        line = (line + 1.0) * 128
-        cv2.imwrite("lf_val/{}.png".format(steps), line.item().numpy().transpose())
+            line = torch.nn.functional.grid_sample(img.transpose(2,3), grid_line)
+            line = (line + 1.0) * 128
+            cv2.imwrite("data/lf_val/{}.png".format(steps), line.cpu()[0].numpy().transpose(2,1,0))
 
-        loss = lf_loss.point_loss(xy_output, xy_positions)
+            loss = lf_loss.point_loss(xy_output, xy_positions)
 
-        sum_loss += loss.item()
-        steps += 1
-        val_step.set_description("Loss: {:3.5f}".format(loss.item()))
+            sum_loss += loss.item()
+            steps += 1
+            val_step.set_description("Loss: {:3.5f}".format(loss.item()))
 
     cnt_since_last_improvement += 1
     if lowest_loss > sum_loss/steps:

@@ -121,23 +121,24 @@ for epoch in range(1000):
     steps = 0.0
     hw.eval()
     val_step = tqdm(test_dataloader)
-    for x in test_dataloader:
-        line_imgs = Variable(x['line_imgs'].type(dtype), requires_grad=False, volatile=True)
-        labels =  Variable(x['labels'], requires_grad=False, volatile=True)
-        label_lengths = Variable(x['label_lengths'], requires_grad=False, volatile=True)
+    with torch.no_grad():
+        for x in test_dataloader:
+            line_imgs = Variable(x['line_imgs'].type(dtype), requires_grad=False)
+            labels =  Variable(x['labels'], requires_grad=False)
+            label_lengths = Variable(x['label_lengths'], requires_grad=False)
 
-        preds = hw(line_imgs).cpu()
+            preds = hw(line_imgs).cpu()
 
-        output_batch = preds.permute(1,0,2)
-        out = output_batch.data.cpu().numpy()
+            output_batch = preds.permute(1,0,2)
+            out = output_batch.data.cpu().numpy()
 
-        for i, gt_line in enumerate(x['gt']):
-            logits = out[i,...]
-            pred, raw_pred = string_utils.naive_decode(logits)
-            pred_str = string_utils.label2str_single(pred, idx_to_char, False)
-            cer = error_rates.cer(gt_line, pred_str)
-            sum_loss += cer
-            steps += 1
+            for i, gt_line in enumerate(x['gt']):
+                logits = out[i,...]
+                pred, raw_pred = string_utils.naive_decode(logits)
+                pred_str = string_utils.label2str_single(pred, idx_to_char, False)
+                cer = error_rates.cer(gt_line, pred_str)
+                sum_loss += cer
+                steps += 1
 
     cnt_since_last_improvement += 1
     if lowest_loss > sum_loss/steps:
