@@ -12,7 +12,7 @@ import cv2
 import numpy as np
 import math
 
-from .grid_distortion import warp_image
+import hw.grid_distortion as grid_distortion
 
 from utils import string_utils, safe_load, augmentation
 

@@ -23,8 +23,8 @@ import operator
 from e2e import e2e_model
 from e2e.e2e_model import E2EModel
 
-from e2e import alignment_dataset, e2e_postprocessing, visualization
-from e2e.alignment_dataset import AlignmentDataset
+from e2e import e2e_postprocessing, visualization
+from e2e.alignment_dataset import AlignmentDataset, collate
 
 from utils.continuous_state import init_model
 
@@ -47,7 +47,7 @@ def alignment_step(config, dataset_lookup=None, model_mode='best_validation', pe
         set_list = set_list[start:end]
 
     dataset = AlignmentDataset(set_list, None)
-    dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=0, collate_fn=alignment_dataset.collate)
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=0, collate_fn=collate)
 
     char_set_path = config['network']['hw']['char_set_path']
 
@@ -55,7 +55,7 @@ def alignment_step(config, dataset_lookup=None, model_mode='best_validation', pe
         char_set = json.load(f)
 
     idx_to_char = {}
-    for k,v in char_set['idx_to_char'].iteritems():
+    for k,v in char_set['idx_to_char'].items():
         idx_to_char[int(k)] = v
 
     sol, lf, hw = init_model(config, sol_dir=model_mode, lf_dir=model_mode, hw_dir=model_mode)
@@ -163,10 +163,10 @@ def alignment_step(config, dataset_lookup=None, model_mode='best_validation', pe
     if dataset_lookup == "validation_set":
         # Skipping because we didn't do the hyperparameter search
         sum_results = {}
-        for k, v in results.iteritems():
+        for k, v in results.items():
             sum_results[k] = np.mean(v)
 
-        sum_results = sorted(sum_results.iteritems(), key=operator.itemgetter(1))
+        sum_results = sorted(sum_results.items(), key=operator.itemgetter(1))
         sum_results = sum_results[0]
 
     return sum_results, np.mean(aligned_results), np.mean(best_ever_results), sol, lf, hw

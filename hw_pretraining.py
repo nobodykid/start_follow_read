@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 
-import hw
+from hw import cnn_lstm
 # from hw.cnn_lstm import create_model
 from hw.hw_dataset import HwDataset, collate
 
@@ -39,7 +39,7 @@ with open(char_set_path) as f:
     char_set = json.load(f)
 
 idx_to_char = {}
-for k,v in char_set['idx_to_char'].iteritems():
+for k,v in char_set['idx_to_char'].items():
     idx_to_char[int(k)] = v
 
 training_set_list = load_file_list(pretrain_config['training_set'])
@@ -102,7 +102,6 @@ for epoch in range(1000):
             sum_loss += cer
             steps += 1
 
-
         batch_size = preds.size(1)
         preds_size = Variable(torch.IntTensor([preds.size(0)] * batch_size))
 
@@ -113,6 +112,7 @@ for epoch in range(1000):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+        train_step.set_description("Loss: {:3.5f}".format(sum_loss/steps))
 
     print("Train Loss", sum_loss/steps)
     # print("Real Epoch", train_dataloader.epoch)
@@ -139,7 +139,11 @@ for epoch in range(1000):
                 cer = error_rates.cer(gt_line, pred_str)
                 sum_loss += cer
                 steps += 1
+            
+            val_step.set_description("Loss: {:3.5f}".format(sum_loss / steps))
 
+    print("Test Loss", sum_loss/steps, lowest_loss)
+    
     cnt_since_last_improvement += 1
     if lowest_loss > sum_loss/steps:
         cnt_since_last_improvement = 0
@@ -148,8 +152,7 @@ for epoch in range(1000):
 
         torch.save(hw.state_dict(), os.path.join(pretrain_config['snapshot_path'], 'hw.pt'))
 
-    print("Test Loss", sum_loss/steps, lowest_loss)
-    print("")
+    # print("")
 
     if cnt_since_last_improvement >= pretrain_config['hw']['stop_after_no_improvement'] and lowest_loss<0.9:
         break
