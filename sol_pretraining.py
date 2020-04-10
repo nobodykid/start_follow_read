@@ -5,7 +5,6 @@ import torch
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 
-import sol
 from sol.start_of_line_finder import StartOfLineFinder
 from sol.alignment_loss import alignment_loss
 from sol.sol_dataset import SolDataset

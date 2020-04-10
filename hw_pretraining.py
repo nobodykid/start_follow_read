@@ -4,8 +4,7 @@ import torch
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 
-from hw import cnn_lstm
-# from hw.cnn_lstm import create_model
+from hw.cnn_lstm import CRNN
 from hw.hw_dataset import HwDataset, collate
 
 from utils.dataset_wrapper import DatasetWrapper
@@ -69,7 +68,8 @@ test_dataloader = DataLoader(test_dataset,
 
 criterion = torch.nn.CTCLoss()
 
-hw = cnn_lstm.create_model(hw_network_config)
+# hw = cnn_lstm.create_model(hw_network_config)
+hw = CRNN(hw_network_config['cnn_out_size'], hw_network_config['num_of_channels'], hw_network_config['num_of_outputs'], 512)
 hw.cuda()
 
 

@@ -4,9 +4,7 @@ import torch
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 
-import lf
-from lf import lf_dataset, lf_loss
-from lf.lf_dataset import LfDataset
+from lf.lf_dataset import LfDataset, collate
 from lf.line_follower import LineFollower
 from utils.dataset_wrapper import DatasetWrapper
 from utils.dataset_parse import load_file_list
@@ -37,7 +35,7 @@ train_dataset = LfDataset(training_set_list,
 train_dataloader = DataLoader(train_dataset,
                               batch_size=1,
                               shuffle=True, num_workers=0,
-                              collate_fn=lf_dataset.collate)
+                              collate_fn=collate)
 batches_per_epoch = int(pretrain_config['lf']['images_per_epoch']/pretrain_config['lf']['batch_size'])
 train_dataloader = DatasetWrapper(train_dataloader, batches_per_epoch)
 
@@ -46,7 +44,7 @@ test_dataset = LfDataset(test_set_list)
 test_dataloader = DataLoader(test_dataset,
                              batch_size=1,
                              shuffle=False, num_workers=0,
-                             collate_fn=lf_dataset.collate)
+                             collate_fn=collate)
 
 
 line_follower = LineFollower()
