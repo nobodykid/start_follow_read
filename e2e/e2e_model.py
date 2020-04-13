@@ -24,14 +24,18 @@ class E2EModel(nn.Module):
         self.lf = lf
         self.hw = hw
 
-
-
     def train(self):
+        """
+        Set all submodules to train mode 
+        """
         self.sol.train()
         self.lf.train()
         self.hw.train()
 
     def eval(self):
+        """
+        Set all submodules to eval mode 
+        """
         self.sol.eval()
         self.lf.eval()
         self.hw.eval()

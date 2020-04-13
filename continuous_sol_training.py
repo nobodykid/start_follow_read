@@ -30,7 +30,14 @@ from utils.continuous_state import init_model
 from utils.dataset_parse import load_file_list
 
 def training_step(config):
+    """
+    Training step for SOL model
 
+    Parameters
+    ----------
+    config: dict
+        YAML-parsed dictionary of training configs
+    """
     train_config = config['training']
 
     allowed_training_time = train_config['sol']['reset_interval']
