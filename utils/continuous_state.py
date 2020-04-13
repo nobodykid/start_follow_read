@@ -19,7 +19,34 @@ import os
 import time
 import random
 
-def init_model(config, sol_dir='best_validation', lf_dir='best_validation', hw_dir='best_validation', only_load=None):
+def init_model(config, 
+                sol_dir='best_validation', 
+                lf_dir='best_validation', 
+                hw_dir='best_validation', 
+                only_load=None, device=torch.device('cuda')):
+    """
+    Initialize E2E submodel, based on checkpoint type used
+
+    Parameters
+    ----------
+    config: dict
+        YAML-parsed dictionary from config file
+    sol_dir: string
+        Checkpoint type for SOL model
+    lf_dir: string
+        Checkpoint type for LF model
+    hw_dir: string
+        Checkpoint type for HW model
+    only_load: list
+        List of model to choose load (default is None, load all models)
+    device: torch.device
+        torch.device for loading models
+
+    Returns
+    -------
+    sol, lf, hw: nn.Module
+        Modules of E2E submodels
+    """
     base_0 = config['network']['sol']['base0']
     base_1 = config['network']['sol']['base1']
 
@@ -31,7 +58,7 @@ def init_model(config, sol_dir='best_validation', lf_dir='best_validation', hw_d
         sol = StartOfLineFinder(base_0, base_1)
         sol_state = safe_load.torch_state(os.path.join(config['training']['snapshot'][sol_dir], "sol.pt"))
         sol.load_state_dict(sol_state)
-        sol.cuda()
+        sol.to(device)
 
     if only_load is None or only_load == 'lf' or 'lf' in only_load:
         lf = LineFollower(config['network']['hw']['input_height'])
@@ -53,12 +80,12 @@ def init_model(config, sol_dir='best_validation', lf_dir='best_validation', hw_d
             lf_state = new_state
 
         lf.load_state_dict(lf_state)
-        lf.cuda()
+        lf.to(device)
 
     if only_load is None or only_load == 'hw' or 'hw' in only_load:
         hw = cnn_lstm.create_model(config['network']['hw'])
         hw_state = safe_load.torch_state(os.path.join(config['training']['snapshot'][hw_dir], "hw.pt"))
         hw.load_state_dict(hw_state)
-        hw.cuda()
+        hw.to(device)
 
     return sol, lf, hw
