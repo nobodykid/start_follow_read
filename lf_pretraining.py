@@ -8,6 +8,7 @@ from lf.lf_dataset import LfDataset, collate
 from lf.line_follower import LineFollower
 from utils.dataset_wrapper import DatasetWrapper
 from utils.dataset_parse import load_file_list
+from lf.lf_loss import point_loss
 
 import numpy as np
 import cv2
@@ -78,7 +79,7 @@ for epoch in range(1000):
         grid_line, _, _, xy_output = line_follower(img, positions[:1], steps=len(positions), all_positions=positions,
                                            reset_interval=reset_interval, randomize=True, skip_grid=True)
 
-        loss = lf_loss.point_loss(xy_output, xy_positions)
+        loss = point_loss(xy_output, xy_positions)
 
         optimizer.zero_grad()
         loss.backward()
@@ -114,7 +115,7 @@ for epoch in range(1000):
             line = (line + 1.0) * 128
             cv2.imwrite("data/lf_val/{}.png".format(steps), line.cpu()[0].numpy().transpose(2,1,0))
 
-            loss = lf_loss.point_loss(xy_output, xy_positions)
+            loss = point_loss(xy_output, xy_positions)
 
             sum_loss += loss.item()
             steps += 1
