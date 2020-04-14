@@ -1,8 +1,8 @@
-from __future import division
+from __future__ import division
 
 from utils import string_utils, error_rates
 import numpy as np
-import nms
+from e2e import nms
 import copy
 
 def get_trimmed_polygons(out):
