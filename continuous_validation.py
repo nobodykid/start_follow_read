@@ -113,7 +113,7 @@ def alignment_step(config, dataset_lookup=None, model_mode='best_validation', pe
 
         out_original = e2e_postprocessing.results_to_numpy(out_original)
         out_original['idx'] = np.arange(out_original['sol'].shape[0])
-        e2e_postprocessing.trim_ends(out_original)
+        out_original = e2e_postprocessing.trim_ends(out_original)
         decoded_hw, decoded_raw_hw = e2e_postprocessing.decode_handwriting(out_original, idx_to_char)
         pick, costs = e2e_postprocessing.align_to_gt_lines(decoded_hw, gt_lines)
 
