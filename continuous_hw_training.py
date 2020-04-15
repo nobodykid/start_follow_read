@@ -10,20 +10,22 @@ from hw.hw_dataset import HwDataset
 
 from utils.dataset_wrapper import DatasetWrapper
 from utils import safe_load
+from utils import string_utils, error_rates
+from utils.continuous_state import init_model
 
 import numpy as np
 import cv2
 import sys
 import json
 import os
-from utils import string_utils, error_rates
 import time
 import random
 import yaml
+from tqdm import tqdm
 
 from utils.dataset_parse import load_file_list
 
-def training_step(config):
+def training_step(config, hw_model=None):
 
     hw_network_config = config['network']['hw']
     train_config = config['training']
@@ -64,22 +66,29 @@ def training_step(config):
                                  shuffle=False, num_workers=0,
                                  collate_fn=hw_dataset.collate)
 
-    hw = cnn_lstm.create_model(hw_network_config)
-    hw_path = os.path.join(train_config['snapshot']['best_validation'], "hw.pt")
-    hw_state = safe_load.torch_state(hw_path)
-    hw.load_state_dict(hw_state)
+    if hw_model is None:
+        # hw = cnn_lstm.create_model(hw_network_config)
+        # hw_path = os.path.join(train_config['snapshot']['best_validation'], "hw.pt")
+        # hw_state = safe_load.torch_state(hw_path)
+        # hw.load_state_dict(hw_state)
+        _, _, hw = init_model(config, hw_dir="best_validation", only_load="hw")
+    else:
+        hw = hw_model
     hw.cuda()
     criterion = torch.nn.CTCLoss()()
     dtype = torch.cuda.FloatTensor
 
     lowest_loss = np.inf
     lowest_loss_i = 0
-    for epoch in range(10000000000):
+    epoch = 0
+    # for epoch in range(10000000000):
+    while True:
         sum_loss = 0.0
         steps = 0.0
         hw.eval()
-        for x in test_dataloader:
-            sys.stdout.flush()
+        test_step = tqdm(test_dataloader)
+        for x in test_step:
+            # sys.stdout.flush()
             line_imgs = Variable(x['line_imgs'].type(dtype), requires_grad=False, volatile=True)
             labels =  Variable(x['labels'], requires_grad=False, volatile=True)
             label_lengths = Variable(x['label_lengths'], requires_grad=False, volatile=True)
@@ -96,6 +105,8 @@ def training_step(config):
                 cer = error_rates.cer(gt_line, pred_str)
                 sum_loss += cer
                 steps += 1
+            
+            test_step.set_description("Avg CER: {:3.5}".format(sum_loss/steps))
 
 
         if epoch == 0:
@@ -103,11 +114,12 @@ def training_step(config):
             print("Benchmark Validation CER:", sum_loss/steps)
             lowest_loss = sum_loss/steps
 
-            hw = cnn_lstm.create_model(hw_network_config)
-            hw_path = os.path.join(train_config['snapshot']['current'], "hw.pt")
-            hw_state = safe_load.torch_state(hw_path)
-            hw.load_state_dict(hw_state)
-            hw.cuda()
+            # hw = cnn_lstm.create_model(hw_network_config)
+            # hw_path = os.path.join(train_config['snapshot']['current'], "hw.pt")
+            # hw_state = safe_load.torch_state(hw_path)
+            # hw.load_state_dict(hw_state)
+            # hw.cuda()
+            _, _, hw = init_model(config, hw_dir="current", only_load="hw")
 
             optimizer = torch.optim.Adam(hw.parameters(), lr=train_config['hw']['learning_rate'])
             optim_path = os.path.join(train_config['snapshot']['current'], "hw_optim.pt")
@@ -129,12 +141,25 @@ def training_step(config):
 
             torch.save(hw.state_dict(), save_path)
             lowest_loss_i = epoch
+            break           # break from training loop
 
         print("Test Loss", sum_loss/steps, lowest_loss)
         print("")
 
         if allowed_training_time < (time.time() - init_training_time):
             print("Out of time: Exiting...")
+
+            ## Save current snapshots for next iteration
+            print("Saving Current")
+            dirname = train_config['snapshot']['current']
+            if not len(dirname) != 0 and os.path.exists(dirname):
+                os.makedirs(dirname)
+
+            save_path = os.path.join(dirname, "hw.pt")
+            torch.save(hw.state_dict(), save_path)
+
+            optim_path = os.path.join(dirname, "hw_optim.pt")
+            torch.save(optimizer.state_dict(), optim_path)
             break
 
         print("Epoch", epoch)
@@ -178,17 +203,8 @@ def training_step(config):
         print("Train Loss", sum_loss/steps)
         print("Real Epoch", train_dataloader.epoch)
 
-    ## Save current snapshots for next iteration
-    print("Saving Current")
-    dirname = train_config['snapshot']['current']
-    if not len(dirname) != 0 and os.path.exists(dirname):
-        os.makedirs(dirname)
-
-    save_path = os.path.join(dirname, "hw.pt")
-    torch.save(hw.state_dict(), save_path)
-
-    optim_path = os.path.join(dirname, "hw_optim.pt")
-    torch.save(optimizer.state_dict(), optim_path)
+    # return trained HW
+    return hw
 
 if __name__ == "__main__":
     config_path = sys.argv[1]

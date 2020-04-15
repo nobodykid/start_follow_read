@@ -4,12 +4,6 @@ import torch
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 
-
-from sol.start_of_line_finder import StartOfLineFinder
-from lf.line_follower import LineFollower
-from hw import cnn_lstm
-from utils import safe_load, error_rates
-
 import numpy as np
 import cv2
 import os
@@ -18,21 +12,23 @@ import json
 import time
 import yaml
 import operator
+from tqdm import tqdm
 
-
-from e2e import e2e_model
+from e2e import e2e_postprocessing
 from e2e.e2e_model import E2EModel
-
-from e2e import e2e_postprocessing, visualization
 from e2e.alignment_dataset import AlignmentDataset, collate
 
 from utils.continuous_state import init_model
+
+from continuous_sol_training import training_step as sol_step
+from continuous_lf_training import training_step as lf_step
+from continuous_hw_training import training_step as hw_step
 
 import itertools
 from collections import defaultdict
 from utils import error_rates
 import copy
-from copy import deepcopy
+# from copy import deepcopy
 
 from e2e import validation_utils
 from utils.dataset_parse import load_file_list
@@ -58,7 +54,12 @@ def alignment_step(config, dataset_lookup=None, model_mode='best_validation', pe
     for k,v in char_set['idx_to_char'].items():
         idx_to_char[int(k)] = v
 
-    sol, lf, hw = init_model(config, sol_dir=model_mode, lf_dir=model_mode, hw_dir=model_mode)
+    print("Initialize submodels...")
+    # sol, lf, hw = init_model(config, sol_dir=model_mode, lf_dir=model_mode, hw_dir=model_mode)
+    if type(model_mode) == str:
+        sol, lf, hw = init_model(config, sol_dir=model_mode, lf_dir=model_mode, hw_dir=model_mode)
+    else:
+        sol, lf, hw = model_mode
 
     e2e = E2EModel(sol, lf, hw)
     dtype = torch.cuda.FloatTensor
@@ -81,13 +82,14 @@ def alignment_step(config, dataset_lookup=None, model_mode='best_validation', pe
     prev_time = time.time()
     cnt = 0
     a = 0
-    for x in dataloader:
+    step = tqdm(dataloader)
+    for x in step:
         sys.stdout.flush()
         a+=1
 
         if a%100 == 0:
-            print(a, np.mean(aligned_results))
-
+            # print(a, np.mean(aligned_results))
+            step.set_description("processed: {0}, avg_cer: {1:3.5}".format(a, np.mean(aligned_results)))
 
         x = x[0]
         if x is None:
@@ -181,7 +183,6 @@ def main():
     if len(sys.argv) > 2:
         mode = sys.argv[2]
 
-
     start_idx = 0
     end_idx = 10
     if len(sys.argv) > 4:
@@ -189,24 +190,31 @@ def main():
         end_idx = int(sys.argv[4])
 
     best_validation_so_far = None
+    sol = None
+    lf = None
+    hw = None
     if mode in ['all', 'validation', 'init']:
         print("Running validation with best overall weight for baseline")
         error, i_error, mi_error, _, _, _ = alignment_step(config, dataset_lookup='validation_set', model_mode="best_overall")
         best_validation_so_far = error[1]
         print("Baseline Validation", error)
 
-    real_json_folder = config['training']['training_set']['json_folder']
+    # real_json_folder = config['training']['training_set']['json_folder']
+    global_epoch = 0
     while True:
-
         for i in range(start_idx, end_idx):
             i_start = float(i) / config['training']['alignment']['train_refresh_groups']
             i_stop = float(i+1) / config['training']['alignment']['train_refresh_groups']
 
             if mode in ['all', 'training', 'init']:
-                print("")
+                print("Global epoch", global_epoch)
                 print("Train running ", i)
                 start = time.time()
-                error, i_error, mi_error, sol, lf, hw  = alignment_step(config, dataset_lookup='training_set', percent_range=[i_start, i_stop])
+                if mode in ['all', 'training']:
+                    sol = sol_step(config, sol)     # train SOL
+                    lf = lf_step(config, lf)        # train LF
+                    hw = hw_step(config)            # train HWR
+                error, i_error, mi_error, sol, lf, hw  = alignment_step(config, dataset_lookup='training_set', percent_range=[i_start, i_stop], model_mode=[sol, lf, hw])
                 print("Error:", error)
                 print("Ideal Error:", i_error)
                 print("Most Ideal Error:", mi_error)
@@ -220,7 +228,7 @@ def main():
                 print("")
                 print("Test running")
                 start = time.time()
-                error, i_error, mi_error, sol, lf, hw = alignment_step(config, dataset_lookup='validation_set')
+                error, i_error, mi_error, sol, lf, hw = alignment_step(config, dataset_lookup='validation_set', model_mode=[sol, lf, hw])
                 if error[1] <= best_validation_so_far:
                     print("Saving best...")
                     dirname = config['training']['snapshot']['best_overall']

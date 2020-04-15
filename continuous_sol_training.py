@@ -25,11 +25,12 @@ import os
 import time
 import random
 import yaml
+from tqdm import tqdm
 
 from utils.continuous_state import init_model
 from utils.dataset_parse import load_file_list
 
-def training_step(config):
+def training_step(config, sol_model=None):
     """
     Training step for SOL model
 
@@ -37,6 +38,13 @@ def training_step(config):
     ----------
     config: dict
         YAML-parsed dictionary of training configs
+    sol_model: torch.nn.Module
+        SOL model initatied (or from previous training iteration)
+    
+    Returns
+    -------
+    sol: torch.nn.Module
+        Best SOL model according to current training step
     """
     train_config = config['training']
 
@@ -67,22 +75,27 @@ def training_step(config):
     alpha_alignment = train_config['sol']['alpha_alignment']
     alpha_backprop = train_config['sol']['alpha_backprop']
 
-    sol, lf, hw = init_model(config, only_load='sol')
+    if sol_model is None:
+        sol, _, _ = init_model(config, only_load='sol')
+    else:
+        sol = sol_model
 
     dtype = torch.cuda.FloatTensor
 
     lowest_loss = np.inf
     lowest_loss_i = 0
-    epoch = -1
-    while True:#This ends on a break based on the current itme
-        epoch += 1
-        print("Train Time:",(time.time() - init_training_time), "Allowed Time:", allowed_training_time)
+    epoch = 0
+    while True: #This ends on a break based on the current itme
+        # epoch += 1
+        # print("Train Time:",(time.time() - init_training_time), "Allowed Time:", allowed_training_time)
 
         sol.eval()
         sum_loss = 0.0
         steps = 0.0
         start_time = time.time()
-        for step_i, x in enumerate(test_dataloader):
+        test_step = tqdm(test_dataloader)
+        print("Validating SOL...")
+        for step_i, x in enumerate(test_step):
             img = Variable(x['img'].type(dtype), requires_grad=False)
 
             sol_gt = None
@@ -93,6 +106,7 @@ def training_step(config):
             predictions = transformation_utils.pt_xyrs_2_xyxy(predictions)
             loss = alignment_loss(predictions, sol_gt, x['label_sizes'], alpha_alignment, alpha_backprop)
             sum_loss += loss.item()
+            test_step.set_description("align_loss: {:3.5}".format(loss.item()))
             steps += 1
 
         if epoch == 0:
@@ -100,7 +114,7 @@ def training_step(config):
             print("Benchmark Validation CER:", sum_loss/steps)
             lowest_loss = sum_loss/steps
 
-            sol, lf, hw = init_model(config, sol_dir='current', only_load='sol')
+            sol, _, _ = init_model(config, sol_dir='current', only_load='sol')
 
             optimizer = torch.optim.Adam(sol.parameters(), lr=train_config['sol']['learning_rate'])
             optim_path = os.path.join(train_config['snapshot']['current'], "sol_optim.pt")
@@ -112,7 +126,7 @@ def training_step(config):
 
         elif lowest_loss > sum_loss/steps:
             lowest_loss = sum_loss/steps
-            print("Saving Best")
+            print("Saving Best SOL")
 
             dirname = train_config['snapshot']['best_validation']
             if not len(dirname) != 0 and os.path.exists(dirname):
@@ -122,12 +136,13 @@ def training_step(config):
 
             torch.save(sol.state_dict(), save_path)
             lowest_loss_i = epoch
+            break       # break out of training loop
 
-        print("Test Loss", sum_loss/steps, lowest_loss)
+        print("Val loss:", sum_loss/steps, "Best loss:", lowest_loss)
         print("Time:", time.time() - start_time)
-        print("")
+        # print("")
 
-        print("Epoch", epoch)
+        print("Epoch", epoch + 1)
 
         if allowed_training_time < (time.time() - init_training_time):
             print("Out of time. Saving current state and exiting...")
@@ -146,7 +161,9 @@ def training_step(config):
         sum_loss = 0.0
         steps = 0.0
         start_time = time.time()
-        for step_i, x in enumerate(train_dataloader):
+        print("Training SOL...")
+        train_step = tqdm(train_dataloader)
+        for step_i, x in train_step:
             img = Variable(x['img'].type(dtype), requires_grad=False)
 
             sol_gt = None
@@ -165,8 +182,11 @@ def training_step(config):
             steps += 1
 
         print("Train Loss", sum_loss/steps)
-        print("Real Epoch", train_dataloader.epoch)
+        # print("Real Epoch", train_dataloader.epoch)
         print("Time:", time.time() - start_time)
+    
+    # return trained SOL
+    return sol
 
 
 

@@ -27,12 +27,13 @@ import os
 import time
 import random
 import yaml
+from tqdm import tqdm
 
 from utils import string_utils, error_rates
 from utils.continuous_state import init_model
 from utils.dataset_parse import load_file_list
 
-def training_step(config):
+def training_step(config, lf_model=None):
 
     char_set_path = config['network']['hw']['char_set_path']
 
@@ -66,25 +67,30 @@ def training_step(config):
                                  shuffle=False, num_workers=0,
                                  collate_fn=lf_dataset.collate)
 
-    _, lf, hw = init_model(config, only_load=['lf', 'hw'])
+    if lf_model is None:
+        _, lf, hw = init_model(config, only_load=['lf', 'hw'])
+    else:
+        lf = lf_model
+        _, _, hw = init_model(config, only_load='hw')
     hw.eval()
 
     dtype = torch.cuda.FloatTensor
 
     lowest_loss = np.inf
     lowest_loss_i = 0
-    for epoch in range(10000000):
+    epoch = 0
+    # for epoch in range(10000000):
+    while True:
         lf.eval()
         sum_loss = 0.0
         steps = 0.0
         start_time = time.time()
-        for step_i, x in enumerate(test_dataloader):
-            if x is None:
+        test_step = tqdm(test_dataloader)
+        for step_i, x in enumerate(test_step):
+            if x is None or x[0] is None:
                 continue
             #Only single batch for now
             x = x[0]
-            if x is None:
-               continue
 
             positions = [Variable(x_i.type(dtype), requires_grad=False)[None,...] for x_i in x['lf_xyrs']]
             xy_positions = [Variable(x_i.type(dtype), requires_grad=False)[None,...] for x_i in x['lf_xyxy']]
@@ -108,6 +114,7 @@ def training_step(config):
             pred_str = string_utils.label2str_single(pred, idx_to_char, False)
             cer = error_rates.cer(gt_line, pred_str)
             sum_loss += cer
+            test_step.set_description("CER: {:3.5}".format(cer))
             steps += 1
 
             # l = line[0].transpose(0,1).transpose(1,2)
@@ -150,29 +157,42 @@ def training_step(config):
 
             torch.save(lf.state_dict(), save_path)
             lowest_loss_i = 0
+            break       # break from training loop
 
-        test_loss = sum_loss/steps
+        # test_loss = sum_loss/steps
 
         print("Test Loss", sum_loss/steps, lowest_loss)
         print("Time:", time.time() - start_time)
-        print("")
+        # print("")
 
         if allowed_training_time < (time.time() - init_training_time):
             print("Out of time: Exiting...")
+            
+            ## Save current snapshots for next iteration
+            print("Saving Current")
+            dirname = train_config['snapshot']['current']
+            if not len(dirname) != 0 and os.path.exists(dirname):
+                os.makedirs(dirname)
+
+            save_path = os.path.join(dirname, "lf.pt")
+            torch.save(lf.state_dict(), save_path)
+
+            optim_path = os.path.join(dirname, "lf_optim.pt")
+            torch.save(optimizer.state_dict(), optim_path)
+            
             break
 
         print("Epoch", epoch)
+        epoch += 1
         sum_loss = 0.0
         steps = 0.0
         lf.train()
         start_time = time.time()
         for x in train_dataloader:
-            if x is None:
+            if x is None or x[0] is None:
                 continue
             #Only single batch for now
             x = x[0]
-            if x is None:
-               continue
 
             positions = [Variable(x_i.type(dtype), requires_grad=False)[None,...] for x_i in x['lf_xyrs']]
             xy_positions = [Variable(x_i.type(dtype), requires_grad=False)[None,...] for x_i in x['lf_xyxy']]
@@ -189,7 +209,6 @@ def training_step(config):
 
             loss = lf_loss.point_loss(xy_output, xy_positions)
 
-
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -199,20 +218,11 @@ def training_step(config):
 
 
         print("Train Loss", sum_loss/steps)
-        print("Real Epoch", train_dataloader.epoch)
+        # print("Real Epoch", train_dataloader.epoch)
         print("Time:", time.time() - start_time)
 
-    ## Save current snapshots for next iteration
-    print("Saving Current")
-    dirname = train_config['snapshot']['current']
-    if not len(dirname) != 0 and os.path.exists(dirname):
-        os.makedirs(dirname)
-
-    save_path = os.path.join(dirname, "lf.pt")
-    torch.save(lf.state_dict(), save_path)
-
-    optim_path = os.path.join(dirname, "lf_optim.pt")
-    torch.save(optimizer.state_dict(), optim_path)
+    # return trained LF
+    return lf
 
 if __name__ == "__main__":
     config_path = sys.argv[1]
